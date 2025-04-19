@@ -7,40 +7,32 @@ const cellSize   = 10;
 const gridWidth  = 40;
 const gridHeight = 40;
 
-const colorBackground = '#000000';
-const colorSnake      = '#00ff00';
-const colorApple      = '#ff0000';
+final colorBackground = '#000000'.toJS;
+final colorSnake      = '#00ff00'.toJS;
+final colorApple      = '#ff0000'.toJS;
 
-const int dirUp    = 0;
+const int dirRight = 0;
 const int dirDown  = 1;
 const int dirLeft  = 2;
-const int dirRight = 3;
+const int dirUp    = 3;
 
-final _dx = <int>[0, 0, -1, 1];
-final _dy = <int>[-1, 1, 0, 0];
+final _dx = <int>[1, 0, -1, 0];
+final _dy = <int>[0, 1, 0, -1];
 
-bool _isOpposite(int c1, int c2) {
-  if ((c1 ^ c2) != 1) return false;
-  return ((c1 < 2) == (c2 < 2));
-}
-
-int _byteForDirection(int dirCode) {
-  switch (dirCode) {
-    case dirUp:    return 0x00; // up=00 repeated => 0000_0000
-    case dirDown:  return 0x55; // down=01 => 0101_0101
-    case dirLeft:  return 0xAA; // left=10 => 1010_1010
-    case dirRight: return 0xFF; // right=11 => 1111_1111
-  }
-  return 0;
-}
+bool _isOpposite(int c1, int c2) => switch (c1) {
+  dirRight => c2 == dirLeft,
+  dirDown  => c2 == dirUp,
+  dirLeft  => c2 == dirRight,
+  dirUp    => c2 == dirDown,
+  _ => true,
+};
 
 class _DirectionsBuffer {
   final int capacity;
   final Uint8List _data;
 
   _DirectionsBuffer(this.capacity)
-      : _data = Uint8List((capacity + 3) >> 2) {
-  }
+      : _data = Uint8List((capacity + 3) >> 2);
 
   void setAt(int index, int dirCode) {
     final byteIndex = index >> 2;
@@ -58,21 +50,17 @@ class _DirectionsBuffer {
     final shift     = (index & 3) << 1;
     return (_data[byteIndex] >> shift) & 3;
   }
-
-  void fill(int dir) {
-    _data.fillRange(0, _data.length, _byteForDirection(dir));
-  }
 }
 
 class Snake {
   final _DirectionsBuffer _directions = _DirectionsBuffer(gridWidth * gridHeight);
 
   int _tailIndex = 0;
-  int _headIndex = 0;
-  int length = 0;
+  int length = 4;
+  int _headIndex = 4 - 2;
   int _directionCode = dirRight;
 
-  int headX = 0;
+  int headX = 3;
   int headY = 0;
 
   int tailX = 0;
@@ -85,24 +73,8 @@ class Snake {
   int score = 0;
   int _nextReward = 10;
 
-  void init() {
-    score = 0;
-    stepPeriod = 300.0;
-    _nextReward = 10;
+  Snake() {
     teleportApple();
-
-    length = 4;
-    _directionCode = dirRight;
-    _tailIndex = 0;
-    _headIndex = length - 2;
-
-    headX = 3;
-    headY = 0;
-
-    tailX = 0;
-    tailY = 0;
-
-    _directions.fill(dirRight);
   }
 
   int _moveIndexForward(int idx) {
@@ -184,12 +156,12 @@ class Snake {
 }
 
 void paintBackground(web.CanvasRenderingContext2D ctx) {
-  ctx.fillStyle = colorBackground.toJS;
+  ctx.fillStyle = colorBackground;
   ctx.fillRect(0, 0, gridWidth * cellSize, gridHeight * cellSize);
 }
 
 void paintSnake(web.CanvasRenderingContext2D ctx, Snake snake) {
-  ctx.fillStyle = colorSnake.toJS;
+  ctx.fillStyle = colorSnake;
 
   int cx = snake.tailX;
   int cy = snake.tailY;
@@ -208,7 +180,7 @@ void paintSnake(web.CanvasRenderingContext2D ctx, Snake snake) {
 }
 
 void paintApple(web.CanvasRenderingContext2D ctx, Snake snake) {
-  ctx.fillStyle = colorApple.toJS;
+  ctx.fillStyle = colorApple;
   ctx.fillRect(
     snake.appleX * cellSize,
     snake.appleY * cellSize,
@@ -240,18 +212,18 @@ void main() {
   }
 
   final scoreElement = web.document.querySelector('#score');
-  final snake = Snake()..init();
+  final snake = Snake();
 
   void handleKeyDown(web.KeyboardEvent e) {
     switch (e.code) {
-      case 'ArrowDown':
-        snake.changeDirection(dirDown);
-      case 'ArrowUp':
-        snake.changeDirection(dirUp);
-      case 'ArrowLeft':
-        snake.changeDirection(dirLeft);
       case 'ArrowRight':
         snake.changeDirection(dirRight);
+      case 'ArrowDown':
+        snake.changeDirection(dirDown);
+      case 'ArrowLeft':
+        snake.changeDirection(dirLeft);
+      case 'ArrowUp':
+        snake.changeDirection(dirUp);
     }
   }
 
