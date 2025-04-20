@@ -189,13 +189,23 @@ void paintApple(web.CanvasRenderingContext2D ctx, Snake snake) {
   );
 }
 
-void repaint(web.CanvasRenderingContext2D ctx, Snake snake) {
+void repaint(web.CanvasRenderingContext2D ctx, Snake snake, bool gameOver) {
   paintBackground(ctx);
-  paintSnake(ctx, snake);
-  paintApple(ctx, snake);
+  if (gameOver) {
+    ctx.fillStyle = "red".toJS;
+    ctx.font = "bold 24px monospace";
+    ctx.textAlign = "center";
+    final centerX = (gridWidth  * cellSize) / 2;
+    final centerY = (gridWidth * cellSize) / 2;
+    ctx.fillText("OH NO, GAME OVER :(", centerX, centerY);
+  } else {
+    paintSnake(ctx, snake);
+    paintApple(ctx, snake);
+  }
 }
 
 void main() {
+  bool gameOver = false;
   final canvas = web.document.querySelector('#gamescreen') as web.HTMLCanvasElement?;
   if (canvas == null) {
     web.window.alert('Cannot find #gamescreen');
@@ -212,9 +222,13 @@ void main() {
   }
 
   final scoreElement = web.document.querySelector('#score');
-  final snake = Snake();
+  var snake = Snake();
 
   void handleKeyDown(web.KeyboardEvent e) {
+    if (gameOver) {
+      snake = Snake();
+      gameOver = false;
+    }
     switch (e.code) {
       case 'ArrowRight':
         snake.changeDirection(dirRight);
@@ -249,14 +263,12 @@ void main() {
         snake.moveAhead();
       }
       if (snake.isOutOfBounds() || snake.eatsItself()) {
-        web.window.alert('Game Over!');
-        web.window.location.reload();
-        return;
+        gameOver = true;
       }
-      repaint(ctx, snake);
+      repaint(ctx, snake, gameOver);
     }
     web.window.requestAnimationFrame(step.toJS);
   }
-  repaint(ctx, snake);
+  repaint(ctx, snake, gameOver);
   web.window.requestAnimationFrame(step.toJS);
 }
